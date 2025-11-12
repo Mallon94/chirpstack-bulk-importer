@@ -6,11 +6,12 @@ import {
   CreateDeviceKeysRequest,
 } from "@chirpstack/chirpstack-api-grpc-web/api/device_pb";
 import type { Metadata } from "grpc-web";
+import { generateAppKeyFromDevEUI } from "@/lib/utils";
 
 export interface DeviceData {
   device_name: string;
   deveui: string;
-  app_key: string;
+  app_key?: string; // Optional - will be auto-generated if not provided
 }
 
 export class ChirpStackClient {
@@ -24,42 +25,11 @@ export class ChirpStackClient {
     };
   }
 
-  async createDevice(
-    applicationId: string,
-    deviceName: string,
-    devEui: string,
-    deviceProfileId: string,
-    appKey: string
-  ): Promise<void> {
-    const device = new Device();
-    device.setName(deviceName);
-    device.setDevEui(devEui);
-    device.setApplicationId(applicationId);
-    device.setDeviceProfileId(deviceProfileId);
-    device.setJoinEui("8C1F6443F9999999");
-    device.setDescription(`Imported device: ${deviceName}`);
-
-    const request = new CreateDeviceRequest();
-    request.setDevice(device);
-
-    return new Promise((resolve, reject) => {
-      this.client.create(request, this.metadata, (err, response) => {
-        if (err) {
-          reject(err);
-        } else {
-          // After creating the device, set the device keys
-          this.createDeviceKeys(devEui, appKey)
-            .then(() => resolve())
-            .catch((keyErr) => reject(keyErr));
-        }
-      });
-    });
-  }
-
   async createDeviceKeys(devEui: string, appKey: string): Promise<void> {
     const deviceKeys = new DeviceKeys();
     deviceKeys.setDevEui(devEui);
-    deviceKeys.setAppKey(appKey);
+    deviceKeys.setNwkKey(appKey); // For LoRaWAN 1.1+
+    deviceKeys.setAppKey(appKey); // For LoRaWAN 1.0.x compatibility
 
     const request = new CreateDeviceKeysRequest();
     request.setDeviceKeys(deviceKeys);
@@ -73,6 +43,40 @@ export class ChirpStackClient {
         }
       });
     });
+  }
+
+  async createDevice(
+    applicationId: string,
+    deviceName: string,
+    devEui: string,
+    deviceProfileId: string,
+    appKey?: string
+  ): Promise<void> {
+    const device = new Device();
+    device.setName(deviceName);
+    device.setDevEui(devEui);
+    device.setApplicationId(applicationId);
+    device.setDeviceProfileId(deviceProfileId);
+    device.setJoinEui("8C1F6443F9999999");
+    device.setDescription(`Imported device: ${deviceName}`);
+
+    const request = new CreateDeviceRequest();
+    request.setDevice(device);
+
+    // Create the device
+    await new Promise<void>((resolve, reject) => {
+      this.client.create(request, this.metadata, (err, response) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    // Generate AppKey if not provided, then set device keys
+    const finalAppKey = appKey || generateAppKeyFromDevEUI(devEui);
+    await this.createDeviceKeys(devEui, finalAppKey);
   }
 
   async registerDevices(
