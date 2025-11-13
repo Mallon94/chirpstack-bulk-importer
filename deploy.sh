@@ -65,9 +65,25 @@ else
     cd $APP_NAME
 fi
 
-# Build Docker image
+# Prompt for environment variables if not set
+if [ -z "$VITE_CHIRPSTACK_URL" ]; then
+    echo ""
+    echo "Please provide ChirpStack configuration:"
+    read -p "ChirpStack URL (e.g., http://your-server-ip): " VITE_CHIRPSTACK_URL
+    read -p "API Token: " VITE_CHIRPSTACK_API_TOKEN
+    read -p "Application ID: " VITE_CHIRPSTACK_APPLICATION_ID
+    read -p "Device Profile ID: " VITE_CHIRPSTACK_DEVICE_PROFILE_ID
+    echo ""
+fi
+
+# Build Docker image with environment variables
 echo "Building Docker image..."
-docker build -t $APP_NAME:latest .
+docker build -t $APP_NAME:latest \
+    --build-arg VITE_CHIRPSTACK_URL="$VITE_CHIRPSTACK_URL" \
+    --build-arg VITE_CHIRPSTACK_API_TOKEN="$VITE_CHIRPSTACK_API_TOKEN" \
+    --build-arg VITE_CHIRPSTACK_APPLICATION_ID="$VITE_CHIRPSTACK_APPLICATION_ID" \
+    --build-arg VITE_CHIRPSTACK_DEVICE_PROFILE_ID="$VITE_CHIRPSTACK_DEVICE_PROFILE_ID" \
+    .
 
 # Run container
 echo "Starting container..."
