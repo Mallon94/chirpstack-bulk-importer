@@ -57,8 +57,8 @@ export function generateAppKeyFromDevEUI(devEui: string): string {
   // Remove any non-hex characters and convert to number
   const cleanDevEui = devEui.replace(/[^0-9A-Fa-f]/g, '')
 
-  // Take last 8 characters (32 bits) as the serial number
-  const serialNumber = parseInt(cleanDevEui.slice(-8), 16)
+  // Take last 4 characters (16 bits, 2 bytes) as the serial number
+  const serialNumber = parseInt(cleanDevEui.slice(-4), 16)
 
   return generateAppKey(serialNumber)
 }
