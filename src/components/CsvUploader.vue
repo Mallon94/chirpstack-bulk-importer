@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { Upload, CheckCircle, XCircle, AlertCircle, FileText, Zap, Type } from "lucide-vue-next";
+import { Upload, CheckCircle, XCircle, AlertCircle, FileText, Type } from "lucide-vue-next";
 import Button from "./ui/Button.vue";
 import Card from "./ui/Card.vue";
 import Alert from "./ui/Alert.vue";
@@ -199,19 +199,23 @@ const reset = () => {
 <template>
   <div class="min-h-screen relative overflow-hidden">
     <!-- Elegant gradient background -->
-    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.1),transparent_50%)]"></div>
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.1),transparent_50%)]"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(249,115,22,0.1),transparent_50%)]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(251,146,60,0.1),transparent_50%)]"></div>
 
     <div class="relative z-10 p-8">
       <div class="max-w-5xl mx-auto space-y-8">
         <!-- Header Section with animation -->
         <div class="text-center space-y-4 animate-fade-in py-8">
-          <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-4">
-            <Zap class="w-10 h-10 text-white" />
+          <div class="inline-flex items-center justify-center mb-4">
+            <img
+              src="https://bee.space/build/assets/beespace-gradient-text-dark-azsTCx8P.svg"
+              alt="beespace logo"
+              class="h-16"
+            />
           </div>
-          <h1 class="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            beespace ChirpStack
+          <h1 class="text-5xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+            ChirpStack Bulk Importer
           </h1>
           <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
             Bulk Device Importer for LoRaWAN
@@ -235,8 +239,8 @@ const reset = () => {
             <!-- Instructions Section -->
             <div class="space-y-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <FileText class="w-5 h-5 text-indigo-600" />
+                <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <FileText class="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
                   <h2 class="text-2xl font-semibold text-foreground">DevEUI Input</h2>
@@ -246,7 +250,7 @@ const reset = () => {
 
               <div class="space-y-2">
                 <p class="text-sm font-medium text-foreground">Format: One DevEUI per line</p>
-                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200 font-mono text-xs leading-relaxed">
+                <div class="bg-gradient-to-br from-orange-50 to-amber-50 p-4 rounded-xl border border-orange-200 font-mono text-xs leading-relaxed">
                   8C1F6443F0000013<br />
                   8C1F6443F0000014<br />
                   8C1F6443F0000017
@@ -276,11 +280,11 @@ const reset = () => {
                   />
                   <div
                     @click="triggerFileInput"
-                    class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-50/50 group-hover:shadow-lg h-full flex flex-col justify-center"
+                    class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 hover:border-orange-400 hover:bg-orange-50/50 group-hover:shadow-lg h-full flex flex-col justify-center"
                     :class="{ 'opacity-50 cursor-not-allowed': isProcessing }"
                   >
                     <div class="transition-transform duration-300 group-hover:scale-110">
-                      <Upload class="mx-auto h-12 w-12 text-indigo-400 mb-3" />
+                      <Upload class="mx-auto h-12 w-12 text-orange-400 mb-3" />
                     </div>
                     <p class="text-base font-medium text-foreground mb-1">
                       {{ uploadedFileName ? uploadedFileName : 'Upload File' }}
@@ -294,7 +298,7 @@ const reset = () => {
                 <!-- Text Paste Area -->
                 <div class="relative">
                   <div class="flex items-center gap-2 mb-2">
-                    <Type class="w-4 h-4 text-indigo-600" />
+                    <Type class="w-4 h-4 text-orange-600" />
                     <label class="text-sm font-medium text-foreground">Or Paste DevEUI List</label>
                   </div>
                   <textarea
@@ -302,7 +306,7 @@ const reset = () => {
                     @input="handleTextInput"
                     :disabled="isProcessing"
                     placeholder="8C1F6443F0000013&#10;8C1F6443F0000014&#10;8C1F6443F0000017"
-                    class="w-full h-[160px] p-4 border-2 border-gray-300 rounded-xl font-mono text-sm resize-none transition-all duration-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full h-[160px] p-4 border-2 border-gray-300 rounded-xl font-mono text-sm resize-none transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   ></textarea>
                 </div>
               </div>
@@ -337,14 +341,14 @@ const reset = () => {
                 enter-from-class="opacity-0 transform -translate-y-2"
                 enter-to-class="opacity-100 transform translate-y-0"
               >
-                <div v-if="uploadStatus === 'uploading'" class="space-y-3 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200">
+                <div v-if="uploadStatus === 'uploading'" class="space-y-3 p-6 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200">
                   <div class="flex justify-between items-center text-sm font-medium">
-                    <span class="text-indigo-700">Uploading devices...</span>
-                    <span class="text-indigo-600">{{ currentProgress }} / {{ totalProgress }}</span>
+                    <span class="text-orange-700">Uploading devices...</span>
+                    <span class="text-orange-600">{{ currentProgress }} / {{ totalProgress }}</span>
                   </div>
                   <div class="w-full bg-white rounded-full h-3 overflow-hidden shadow-inner">
                     <div
-                      class="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
+                      class="bg-gradient-to-r from-orange-500 to-amber-600 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
                       :style="{ width: `${(currentProgress / totalProgress) * 100}%` }"
                     />
                   </div>
@@ -392,7 +396,7 @@ const reset = () => {
                   :disabled="deviceCount === 0 || isProcessing || !isConfigured"
                   class="flex-1 h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  <Zap class="w-5 h-5 mr-2" />
+                  <Upload class="w-5 h-5 mr-2" />
                   {{ isProcessing ? 'Uploading...' : 'Upload to ChirpStack' }}
                 </Button>
                 <Button
