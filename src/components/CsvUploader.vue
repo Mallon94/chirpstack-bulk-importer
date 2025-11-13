@@ -203,7 +203,7 @@ const reset = () => {
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(249,115,22,0.1),transparent_50%)]"></div>
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(251,146,60,0.1),transparent_50%)]"></div>
 
-    <div class="relative z-10 p-8">
+    <div class="relative z-10 p-8 pt-2">
       <div class="max-w-5xl mx-auto space-y-8">
         <!-- Header Section with animation -->
         <div class="text-center space-y-4 animate-fade-in py-8">
