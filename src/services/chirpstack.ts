@@ -9,7 +9,7 @@ import type { Metadata } from "grpc-web";
 import { generateAppKeyFromDevEUI } from "@/lib/utils";
 
 export interface DeviceData {
-  device_name: string;
+  device_name?: string; // Optional - will be auto-generated from DevEUI if not provided
   deveui: string;
   app_key?: string; // Optional - will be auto-generated if not provided
 }
@@ -99,10 +99,14 @@ export class ChirpStackClient {
       const device = devices[i];
       if (!device) continue;
 
+      // Generate device_name from last 5 digits of DevEUI if not provided
+      const deviceName = device.device_name ||
+        `BZ1-${device.deveui.replace(/[^0-9A-Fa-f]/g, '').slice(-5).toUpperCase()}`;
+
       try {
         await this.createDevice(
           applicationId,
-          device.device_name,
+          deviceName,
           device.deveui,
           deviceProfileId,
           device.app_key
