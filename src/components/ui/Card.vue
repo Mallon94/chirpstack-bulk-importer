@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<CardProps>(), {})
 </script>
 
 <template>
-  <div :class="cn('rounded-lg border bg-card text-card-foreground shadow-sm', props.class)">
+  <div :class="cn('rounded-2xl border bg-card text-card-foreground shadow-lg hover:shadow-xl transition-shadow duration-300', props.class)">
     <slot />
   </div>
 </template>

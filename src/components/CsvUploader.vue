@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import Papa from "papaparse";
-import { Upload, CheckCircle, XCircle, AlertCircle } from "lucide-vue-next";
+import { Upload, CheckCircle, XCircle, AlertCircle, FileText, Zap } from "lucide-vue-next";
 import Button from "./ui/Button.vue";
 import Card from "./ui/Card.vue";
 import Alert from "./ui/Alert.vue";
@@ -170,141 +170,214 @@ const reset = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background p-8">
-    <div class="max-w-4xl mx-auto space-y-6">
-      <div class="text-center space-y-2">
-        <h1 class="text-4xl font-bold text-foreground">
-          beespace ChirpStack Bulk Device Importer
-        </h1>
-        <p class="text-muted-foreground">
-          Import LoRaWAN devices to beespace ChirpStack v4 server via CSV file
-        </p>
-      </div>
+  <div class="min-h-screen relative overflow-hidden">
+    <!-- Elegant gradient background -->
+    <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.1),transparent_50%)]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.1),transparent_50%)]"></div>
 
-      <Alert v-if="!isConfigured" variant="destructive">
-        <AlertCircle class="h-4 w-4 inline mr-2" />
-        <strong>Configuration Missing:</strong> Please configure
-        VITE_CHIRPSTACK_URL, VITE_CHIRPSTACK_API_TOKEN,
-        VITE_CHIRPSTACK_APPLICATION_ID, and VITE_CHIRPSTACK_DEVICE_PROFILE_ID in
-        your .env file
-      </Alert>
-
-      <Card class="p-6 space-y-4">
-        <div class="space-y-2">
-          <h2 class="text-2xl font-semibold">CSV Format Requirements</h2>
-          <p class="text-muted-foreground">
-            Your CSV file must include the following headers:
-          </p>
-          <div class="bg-muted p-4 rounded-md font-mono text-sm">
-            device_name,deveui
+    <div class="relative z-10 p-8">
+      <div class="max-w-5xl mx-auto space-y-8">
+        <!-- Header Section with animation -->
+        <div class="text-center space-y-4 animate-fade-in py-8">
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-4">
+            <Zap class="w-10 h-10 text-white" />
           </div>
+          <h1 class="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            beespace ChirpStack
+          </h1>
+          <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Bulk Device Importer for LoRaWAN
+          </p>
           <p class="text-sm text-muted-foreground">
-            The <strong>app_key</strong> column is optional. If not provided, it
-            will be auto-generated from the DevEUI.
+            Seamlessly import your devices to beespace ChirpStack v4 server
           </p>
-          <p class="text-sm text-muted-foreground">Example:</p>
-          <div class="bg-muted p-4 rounded-md font-mono text-sm">
-            device_name,deveui<br />
-            BZ1-00001,8C1F6443F0000001<br />
-            BZ1-00002,8C1F6443F0000002
-          </div>
-          <p class="text-sm text-muted-foreground mt-2">
-            Or with custom app_key:
-          </p>
-          <div class="bg-muted p-4 rounded-md font-mono text-sm">
-            device_name,deveui,app_key<br />
-            BZ1-00001,8C1F6443F0000001,D0E4033CE41D0333B81602228CEF022D<br />
-            BZ1-00002,8C1F6443F0000002,9F8ED292AB6CBAC0F74A0336C3A86B64
-          </div>
         </div>
 
-        <div class="space-y-4">
-          <div
-            class="border-2 border-dashed border-border rounded-lg p-8 text-center"
-          >
-            <Upload class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept=".csv"
-              class="hidden"
-              @change="handleFileChange"
-              :disabled="isProcessing"
-            />
-            <Button
-              variant="outline"
-              :disabled="isProcessing"
-              @click="triggerFileInput"
-            >
-              Select CSV File
-            </Button>
-            <p v-if="csvFile" class="mt-4 text-sm text-muted-foreground">
-              Selected: {{ csvFile.name }}
-            </p>
-          </div>
-
-          <Alert v-if="deviceCount > 0" variant="success">
-            <CheckCircle class="h-4 w-4 inline mr-2" />
-            Found <strong>{{ deviceCount }}</strong> device(s) in the CSV file
+        <!-- Configuration Warning -->
+        <div v-if="!isConfigured" class="animate-slide-up">
+          <Alert variant="destructive" class="shadow-lg">
+            <AlertCircle class="h-5 w-5 inline mr-2" />
+            <strong>Configuration Missing:</strong> Please configure your environment variables in the .env file
           </Alert>
+        </div>
 
-          <Alert v-if="errorMessage" variant="destructive">
-            <XCircle class="h-4 w-4 inline mr-2" />
-            {{ errorMessage }}
-          </Alert>
+        <!-- Main Card -->
+        <Card class="shadow-xl border-0 bg-white/80 backdrop-blur-sm animate-slide-up" style="animation-delay: 0.1s">
+          <div class="p-8 space-y-6">
+            <!-- Instructions Section -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                  <FileText class="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 class="text-2xl font-semibold text-foreground">CSV Format</h2>
+                  <p class="text-sm text-muted-foreground">Required headers and examples</p>
+                </div>
+              </div>
 
-          <div v-if="uploadStatus === 'uploading'" class="space-y-2">
-            <div class="flex justify-between text-sm">
-              <span>Uploading devices...</span>
-              <span>{{ currentProgress }} / {{ totalProgress }}</span>
-            </div>
-            <div class="w-full bg-muted rounded-full h-2">
-              <div
-                class="bg-primary h-2 rounded-full transition-all"
-                :style="{
-                  width: `${(currentProgress / totalProgress) * 100}%`,
-                }"
-              />
-            </div>
-          </div>
+              <div class="grid md:grid-cols-2 gap-4">
+                <!-- Required Format -->
+                <div class="space-y-2">
+                  <p class="text-sm font-medium text-foreground">Required Format</p>
+                  <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200 font-mono text-sm">
+                    <span class="text-indigo-600">device_name</span>,<span class="text-purple-600">deveui</span>
+                  </div>
+                  <p class="text-xs text-muted-foreground">
+                    <strong>app_key</strong> is optional and will be auto-generated if not provided
+                  </p>
+                </div>
 
-          <div v-if="uploadStatus === 'success'" class="space-y-2">
-            <Alert variant="success">
-              <CheckCircle class="h-4 w-4 inline mr-2" />
-              Successfully registered {{ successCount }} device(s)
-              <span v-if="failedCount > 0">, {{ failedCount }} failed</span>
-            </Alert>
-
-            <div v-if="uploadErrors.length > 0" class="mt-4">
-              <h3 class="font-semibold mb-2">Errors:</h3>
-              <div class="space-y-1 max-h-60 overflow-y-auto">
-                <div
-                  v-for="(error, index) in uploadErrors"
-                  :key="index"
-                  class="text-sm bg-destructive/10 p-2 rounded"
-                >
-                  <strong>{{ error.device.device_name }}</strong> ({{
-                    error.device.deveui
-                  }}): {{ error.error }}
+                <!-- Example -->
+                <div class="space-y-2">
+                  <p class="text-sm font-medium text-foreground">Example</p>
+                  <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200 font-mono text-xs leading-relaxed">
+                    device_name,deveui<br />
+                    BZ1-00001,8C1F6443F0000001<br />
+                    BZ1-00002,8C1F6443F0000002
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="flex gap-4">
-            <Button
-              @click="uploadDevices"
-              :disabled="deviceCount === 0 || isProcessing || !isConfigured"
-              class="flex-1"
-            >
-              {{ isProcessing ? "Uploading..." : "Upload to ChirpStack" }}
-            </Button>
-            <Button @click="reset" variant="outline" :disabled="isProcessing">
-              Reset
-            </Button>
+            <div class="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+
+            <!-- Upload Section -->
+            <div class="space-y-4">
+              <!-- File Upload Area -->
+              <div class="relative group">
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept=".csv"
+                  class="hidden"
+                  @change="handleFileChange"
+                  :disabled="isProcessing"
+                />
+                <div
+                  @click="triggerFileInput"
+                  class="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-50/50 group-hover:shadow-lg"
+                  :class="{ 'opacity-50 cursor-not-allowed': isProcessing }"
+                >
+                  <div class="transition-transform duration-300 group-hover:scale-110">
+                    <Upload class="mx-auto h-16 w-16 text-indigo-400 mb-4" />
+                  </div>
+                  <p class="text-lg font-medium text-foreground mb-2">
+                    {{ csvFile ? csvFile.name : 'Click to select CSV file' }}
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    or drag and drop your file here
+                  </p>
+                </div>
+              </div>
+
+              <!-- Device Count Alert -->
+              <transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0 transform scale-95"
+                enter-to-class="opacity-100 transform scale-100"
+              >
+                <Alert v-if="deviceCount > 0" variant="success" class="shadow-md">
+                  <CheckCircle class="h-5 w-5 inline mr-2" />
+                  Found <strong class="text-lg">{{ deviceCount }}</strong> device(s) ready for import
+                </Alert>
+              </transition>
+
+              <!-- Error Alert -->
+              <transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0 transform scale-95"
+                enter-to-class="opacity-100 transform scale-100"
+              >
+                <Alert v-if="errorMessage && uploadStatus !== 'success'" variant="destructive" class="shadow-md">
+                  <XCircle class="h-5 w-5 inline mr-2" />
+                  {{ errorMessage }}
+                </Alert>
+              </transition>
+
+              <!-- Upload Progress -->
+              <transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0 transform -translate-y-2"
+                enter-to-class="opacity-100 transform translate-y-0"
+              >
+                <div v-if="uploadStatus === 'uploading'" class="space-y-3 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200">
+                  <div class="flex justify-between items-center text-sm font-medium">
+                    <span class="text-indigo-700">Uploading devices...</span>
+                    <span class="text-indigo-600">{{ currentProgress }} / {{ totalProgress }}</span>
+                  </div>
+                  <div class="w-full bg-white rounded-full h-3 overflow-hidden shadow-inner">
+                    <div
+                      class="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
+                      :style="{ width: `${(currentProgress / totalProgress) * 100}%` }"
+                    />
+                  </div>
+                </div>
+              </transition>
+
+              <!-- Success Message -->
+              <transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0 transform scale-95"
+                enter-to-class="opacity-100 transform scale-100"
+              >
+                <div v-if="uploadStatus === 'success'" class="space-y-4">
+                  <Alert variant="success" class="shadow-lg">
+                    <CheckCircle class="h-5 w-5 inline mr-2" />
+                    Successfully registered <strong>{{ successCount }}</strong> device(s)
+                    <span v-if="failedCount > 0" class="text-orange-600"> - {{ failedCount }} failed</span>
+                  </Alert>
+
+                  <!-- Error List -->
+                  <div v-if="uploadErrors.length > 0" class="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
+                    <h3 class="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                      <XCircle class="w-4 h-4" />
+                      Failed Devices
+                    </h3>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                      <div
+                        v-for="(error, index) in uploadErrors"
+                        :key="index"
+                        class="text-sm bg-white p-3 rounded-lg shadow-sm"
+                      >
+                        <strong class="text-red-700">{{ error.device.device_name }}</strong>
+                        <span class="text-gray-500"> ({{ error.device.deveui }})</span>
+                        <p class="text-red-600 mt-1">{{ error.error }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </transition>
+
+              <!-- Action Buttons -->
+              <div class="flex gap-4 pt-4">
+                <Button
+                  @click="uploadDevices"
+                  :disabled="deviceCount === 0 || isProcessing || !isConfigured"
+                  class="flex-1 h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <Zap class="w-5 h-5 mr-2" />
+                  {{ isProcessing ? 'Uploading...' : 'Upload to ChirpStack' }}
+                </Button>
+                <Button
+                  @click="reset"
+                  variant="outline"
+                  :disabled="isProcessing"
+                  class="h-12 px-6 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  Reset
+                </Button>
+              </div>
+            </div>
           </div>
+        </Card>
+
+        <!-- Footer -->
+        <div class="text-center text-sm text-muted-foreground animate-fade-in" style="animation-delay: 0.3s">
+          <p>Powered by ChirpStack v4 gRPC API</p>
         </div>
-      </Card>
+      </div>
     </div>
   </div>
 </template>
