@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import Papa from "papaparse";
-import { Upload, CheckCircle, XCircle, AlertCircle, FileText, Zap } from "lucide-vue-next";
+import { Upload, CheckCircle, XCircle, AlertCircle, FileText, Zap, Type } from "lucide-vue-next";
 import Button from "./ui/Button.vue";
 import Card from "./ui/Card.vue";
 import Alert from "./ui/Alert.vue";
@@ -9,7 +8,8 @@ import { ChirpStackClient, type DeviceData } from "@/services/chirpstack";
 import { generateAppKeyFromDevEUI } from "@/lib/utils";
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const csvFile = ref<File | null>(null);
+const textInput = ref("");
+const uploadedFileName = ref("");
 const devices = ref<DeviceData[]>([]);
 const isProcessing = ref(false);
 const uploadStatus = ref<
@@ -33,121 +33,92 @@ const isConfigured = computed(
   () => chirpstackUrl && apiToken && applicationId && deviceProfileId
 );
 
+// Parse DevEUI text (from file or paste)
+const parseDevEuiText = (text: string): DeviceData[] => {
+  // Split by newlines and filter out empty lines
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  // Process each line as a DevEUI
+  const validDevices: DeviceData[] = [];
+
+  for (const devEui of lines) {
+    const cleanDevEui = devEui.replace(/[^0-9A-Fa-f]/g, '');
+
+    // Validate DevEUI (should be 16 hex characters)
+    if (cleanDevEui.length !== 16) {
+      continue;
+    }
+
+    const last5Digits = cleanDevEui.slice(-5).toUpperCase();
+
+    validDevices.push({
+      deveui: devEui,
+      device_name: `BZ1-${last5Digits}`,
+      app_key: generateAppKeyFromDevEUI(devEui)
+    });
+  }
+
+  return validDevices;
+};
+
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
 
   if (!file) return;
 
-  csvFile.value = file;
+  uploadedFileName.value = file.name;
   uploadStatus.value = "parsing";
   errorMessage.value = "";
   devices.value = [];
 
-  Papa.parse<DeviceData>(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      if (results.errors.length > 0) {
-        const firstError = results.errors[0];
-        errorMessage.value = `CSV parsing error: ${
-          firstError?.message || "Unknown error"
-        }`;
-        uploadStatus.value = "error";
-        return;
-      }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target?.result as string;
+    const validDevices = parseDevEuiText(text);
 
-      // Check if headers contain 'deveui'
-      const headers = results.meta.fields || [];
-      const hasDevEuiHeader = headers.some(h => h && h.toLowerCase().includes("deveui"));
-
-      // If no deveui header found, re-parse as headerless CSV
-      if (!hasDevEuiHeader) {
-        Papa.parse<string[]>(file, {
-          header: false,
-          skipEmptyLines: true,
-          delimiter: "",  // Auto-detect delimiter
-          complete: (headerlessResults) => {
-            // Filter out delimiter detection warnings (non-critical errors)
-            const criticalErrors = headerlessResults.errors.filter(
-              (err) => err.type !== "Delimiter" && err.code !== "UndetectableDelimiter"
-            );
-
-            if (criticalErrors.length > 0) {
-              const firstError = criticalErrors[0];
-              errorMessage.value = `CSV parsing error: ${
-                firstError?.message || "Unknown error"
-              }`;
-              uploadStatus.value = "error";
-              return;
-            }
-
-            // Process each row as a DevEUI (first column)
-            const validDevices = headerlessResults.data
-              .filter((row) => {
-                return row && row[0] && row[0].trim() !== "";
-              })
-              .map((row) => {
-                const devEui = row[0]!.trim();
-                const cleanDevEui = devEui.replace(/[^0-9A-Fa-f]/g, '');
-                const last5Digits = cleanDevEui.slice(-5).toUpperCase();
-
-                return {
-                  deveui: devEui,
-                  device_name: `BZ1-${last5Digits}`,
-                  app_key: generateAppKeyFromDevEUI(devEui)
-                };
-              });
-
-            if (validDevices.length === 0) {
-              errorMessage.value = "No valid devices found in CSV";
-              uploadStatus.value = "error";
-              return;
-            }
-
-            devices.value = validDevices;
-            uploadStatus.value = "idle";
-          },
-          error: (error) => {
-            errorMessage.value = `Failed to parse CSV: ${error.message}`;
-            uploadStatus.value = "error";
-          }
-        });
-        return;
-      }
-
-      // Process with headers
-      const validDevices = results.data
-        .filter((device) => {
-          return device.deveui && device.deveui.trim() !== "";
-        })
-        .map((device) => {
-          // Auto-generate device_name from last 5 digits of DevEUI
-          const cleanDevEui = device.deveui.replace(/[^0-9A-Fa-f]/g, '');
-          const last5Digits = cleanDevEui.slice(-5).toUpperCase();
-          device.device_name = `BZ1-${last5Digits}`;
-
-          // Auto-generate app_key from DevEUI if not provided
-          if (!device.app_key || device.app_key.trim() === "") {
-            device.app_key = generateAppKeyFromDevEUI(device.deveui);
-          }
-          return device;
-        });
-
-      if (validDevices.length === 0) {
-        errorMessage.value = "No valid devices found in CSV";
-        uploadStatus.value = "error";
-        return;
-      }
-
-      devices.value = validDevices;
-      uploadStatus.value = "idle";
-    },
-    error: (error) => {
-      errorMessage.value = `Failed to parse CSV: ${error.message}`;
+    if (validDevices.length === 0) {
+      errorMessage.value = "No valid DevEUI values found in file";
       uploadStatus.value = "error";
-    },
-  });
+      return;
+    }
+
+    devices.value = validDevices;
+    uploadStatus.value = "idle";
+  };
+
+  reader.onerror = () => {
+    errorMessage.value = "Failed to read file";
+    uploadStatus.value = "error";
+  };
+
+  reader.readAsText(file);
+};
+
+// Handle text paste
+const handleTextInput = () => {
+  if (!textInput.value.trim()) {
+    devices.value = [];
+    return;
+  }
+
+  uploadStatus.value = "parsing";
+  errorMessage.value = "";
+  uploadedFileName.value = "";
+
+  const validDevices = parseDevEuiText(textInput.value);
+
+  if (validDevices.length === 0) {
+    errorMessage.value = "No valid DevEUI values found in text";
+    uploadStatus.value = "error";
+    return;
+  }
+
+  devices.value = validDevices;
+  uploadStatus.value = "idle";
 };
 
 const uploadDevices = async () => {
@@ -209,7 +180,8 @@ const triggerFileInput = () => {
 };
 
 const reset = () => {
-  csvFile.value = null;
+  textInput.value = "";
+  uploadedFileName.value = "";
   devices.value = [];
   uploadStatus.value = "idle";
   errorMessage.value = "";
@@ -267,34 +239,21 @@ const reset = () => {
                   <FileText class="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h2 class="text-2xl font-semibold text-foreground">CSV Format</h2>
-                  <p class="text-sm text-muted-foreground">Simple and flexible - with or without headers</p>
+                  <h2 class="text-2xl font-semibold text-foreground">DevEUI Input</h2>
+                  <p class="text-sm text-muted-foreground">Upload a file or paste DevEUI values directly</p>
                 </div>
               </div>
 
-              <div class="grid md:grid-cols-2 gap-4">
-                <!-- Required Format -->
-                <div class="space-y-2">
-                  <p class="text-sm font-medium text-foreground">Option 1: With Header</p>
-                  <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200 font-mono text-xs leading-relaxed">
-                    <span class="text-purple-600">deveui</span><br />
-                    8C1F6443F0000013<br />
-                    8C1F6443F0000014
-                  </div>
-                </div>
-
-                <!-- Example -->
-                <div class="space-y-2">
-                  <p class="text-sm font-medium text-foreground">Option 2: Without Header</p>
-                  <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200 font-mono text-xs leading-relaxed">
-                    8C1F6443F0000013<br />
-                    8C1F6443F0000014<br />
-                    8C1F6443F0000017
-                  </div>
+              <div class="space-y-2">
+                <p class="text-sm font-medium text-foreground">Format: One DevEUI per line</p>
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200 font-mono text-xs leading-relaxed">
+                  8C1F6443F0000013<br />
+                  8C1F6443F0000014<br />
+                  8C1F6443F0000017
                 </div>
               </div>
               <div class="mt-3 text-xs text-muted-foreground space-y-1">
-                <p>✓ Headers are optional - just list DevEUI values</p>
+                <p>✓ Just list DevEUI values - one per line</p>
                 <p>✓ Device names auto-generated as <strong>BZ1-{last 5 digits}</strong></p>
                 <p>✓ AppKeys automatically derived from DevEUI</p>
               </div>
@@ -302,32 +261,49 @@ const reset = () => {
 
             <div class="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
 
-            <!-- Upload Section -->
+            <!-- Input Section -->
             <div class="space-y-4">
-              <!-- File Upload Area -->
-              <div class="relative group">
-                <input
-                  ref="fileInputRef"
-                  type="file"
-                  accept=".csv"
-                  class="hidden"
-                  @change="handleFileChange"
-                  :disabled="isProcessing"
-                />
-                <div
-                  @click="triggerFileInput"
-                  class="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-50/50 group-hover:shadow-lg"
-                  :class="{ 'opacity-50 cursor-not-allowed': isProcessing }"
-                >
-                  <div class="transition-transform duration-300 group-hover:scale-110">
-                    <Upload class="mx-auto h-16 w-16 text-indigo-400 mb-4" />
+              <div class="grid md:grid-cols-2 gap-4">
+                <!-- File Upload Area -->
+                <div class="relative group">
+                  <input
+                    ref="fileInputRef"
+                    type="file"
+                    accept=".txt,.csv"
+                    class="hidden"
+                    @change="handleFileChange"
+                    :disabled="isProcessing"
+                  />
+                  <div
+                    @click="triggerFileInput"
+                    class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-50/50 group-hover:shadow-lg h-full flex flex-col justify-center"
+                    :class="{ 'opacity-50 cursor-not-allowed': isProcessing }"
+                  >
+                    <div class="transition-transform duration-300 group-hover:scale-110">
+                      <Upload class="mx-auto h-12 w-12 text-indigo-400 mb-3" />
+                    </div>
+                    <p class="text-base font-medium text-foreground mb-1">
+                      {{ uploadedFileName ? uploadedFileName : 'Upload File' }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                      .txt or .csv
+                    </p>
                   </div>
-                  <p class="text-lg font-medium text-foreground mb-2">
-                    {{ csvFile ? csvFile.name : 'Click to select CSV file' }}
-                  </p>
-                  <p class="text-sm text-muted-foreground">
-                    or drag and drop your file here
-                  </p>
+                </div>
+
+                <!-- Text Paste Area -->
+                <div class="relative">
+                  <div class="flex items-center gap-2 mb-2">
+                    <Type class="w-4 h-4 text-indigo-600" />
+                    <label class="text-sm font-medium text-foreground">Or Paste DevEUI List</label>
+                  </div>
+                  <textarea
+                    v-model="textInput"
+                    @input="handleTextInput"
+                    :disabled="isProcessing"
+                    placeholder="8C1F6443F0000013&#10;8C1F6443F0000014&#10;8C1F6443F0000017"
+                    class="w-full h-[160px] p-4 border-2 border-gray-300 rounded-xl font-mono text-sm resize-none transition-all duration-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  ></textarea>
                 </div>
               </div>
 
