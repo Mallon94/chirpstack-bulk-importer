@@ -20,22 +20,28 @@ A Vue 3 web application for bulk importing LoRaWAN devices to ChirpStack v4 via 
 ## Setup
 
 1. Clone the repository:
+
 ```bash
-git clone <repository-url>
-cd chirpstack-bulk-importer
+# Download and run the deployment script
+curl -O https://raw.githubusercontent.com/Mallon94/chirpstack-bulk-importer/claude/vue-shadcn-lorawan-csv-uploader-011CV4g7BK1c4C8XmAXUod6q/deploy.sh
+chmod +x deploy.sh
+./deploy.sh
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Configure environment variables:
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and fill in your ChirpStack server details:
+
 ```env
 VITE_CHIRPSTACK_URL=https://your-chirpstack-server:8080
 VITE_CHIRPSTACK_API_TOKEN=your-api-token
@@ -44,6 +50,7 @@ VITE_CHIRPSTACK_DEVICE_PROFILE_ID=your-device-profile-uuid
 ```
 
 4. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -60,6 +67,7 @@ Sensor-03,010203040506070A
 ```
 
 **Required columns:**
+
 - `device_name`: The name of the device
 - `deveui`: The device EUI (16 hex characters)
 
