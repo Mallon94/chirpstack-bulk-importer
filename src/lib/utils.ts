@@ -15,10 +15,11 @@ export function generateAppKey(serialNumber: number): string {
   // Convert the 4 uint32 values to a 16-byte array
   const bytes: number[] = []
   for (let i = 0; i < 4; i++) {
-    bytes.push((hashV[i] >>> 0) & 0xFF)
-    bytes.push((hashV[i] >>> 8) & 0xFF)
-    bytes.push((hashV[i] >>> 16) & 0xFF)
-    bytes.push((hashV[i] >>> 24) & 0xFF)
+    const val = hashV[i]!
+    bytes.push((val >>> 0) & 0xFF)
+    bytes.push((val >>> 8) & 0xFF)
+    bytes.push((val >>> 16) & 0xFF)
+    bytes.push((val >>> 24) & 0xFF)
   }
 
   // Convert bytes to hex string
