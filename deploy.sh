@@ -72,7 +72,7 @@ cat > .env << 'EOF'
 # The URL of your ChirpStack server (including protocol and port if needed)
 # Example: https://chirpstack.example.com:8080
 # For local development, use the proxy path to avoid CORS issues
-VITE_CHIRPSTACK_URL=http://localhost:5174
+VITE_CHIRPSTACK_URL=
 
 
 # ChirpStack API Token
@@ -92,37 +92,9 @@ VITE_CHIRPSTACK_APPLICATION_ID=d125de58-de82-4221-9330-a90c9676cb4d
 VITE_CHIRPSTACK_DEVICE_PROFILE_ID=fa8c07e0-82f0-4243-9df1-2d8eab445f7a
 EOF
 
-# Load environment variables from .env file
-echo "Loading environment variables..."
-source .env
-
-# Prompt for environment variables if not set
-if [ -z "$VITE_CHIRPSTACK_URL" ]; then
-    echo ""
-    echo "Please provide ChirpStack configuration:"
-    read -p "ChirpStack URL (e.g., http://your-server-ip): " VITE_CHIRPSTACK_URL
-    read -p "API Token: " VITE_CHIRPSTACK_API_TOKEN
-    read -p "Application ID: " VITE_CHIRPSTACK_APPLICATION_ID
-    read -p "Device Profile ID: " VITE_CHIRPSTACK_DEVICE_PROFILE_ID
-    echo ""
-fi
-
-# Build Docker image with environment variables
-echo "Building Docker image..."
-docker build -t $APP_NAME:latest \
-    --build-arg VITE_CHIRPSTACK_URL="$VITE_CHIRPSTACK_URL" \
-    --build-arg VITE_CHIRPSTACK_API_TOKEN="$VITE_CHIRPSTACK_API_TOKEN" \
-    --build-arg VITE_CHIRPSTACK_APPLICATION_ID="$VITE_CHIRPSTACK_APPLICATION_ID" \
-    --build-arg VITE_CHIRPSTACK_DEVICE_PROFILE_ID="$VITE_CHIRPSTACK_DEVICE_PROFILE_ID" \
-    .
-
-# Run container
-echo "Starting container..."
-docker run -d \
-    --name $CONTAINER_NAME \
-    --restart unless-stopped \
-    -p $PORT:80 \
-    $APP_NAME:latest
+# Build and start with docker-compose (reads .env automatically)
+echo "Building and starting container..."
+docker-compose up -d --build
 
 # Wait for container to be healthy
 echo "Waiting for application to start..."

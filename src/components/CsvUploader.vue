@@ -37,8 +37,9 @@ const applicationId = import.meta.env.VITE_CHIRPSTACK_APPLICATION_ID || "";
 const deviceProfileId = import.meta.env.VITE_CHIRPSTACK_DEVICE_PROFILE_ID || "";
 
 const deviceCount = computed(() => devices.value.length);
+// chirpstackUrl defaults to /api, so only check the other required fields
 const isConfigured = computed(
-  () => chirpstackUrl && apiToken && applicationId && deviceProfileId
+  () => apiToken && applicationId && deviceProfileId
 );
 
 // Parse DevEUI text (from file or paste)
