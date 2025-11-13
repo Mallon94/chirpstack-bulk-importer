@@ -66,9 +66,15 @@ const handleFileChange = (event: Event) => {
         Papa.parse<string[]>(file, {
           header: false,
           skipEmptyLines: true,
+          delimiter: "",  // Auto-detect delimiter
           complete: (headerlessResults) => {
-            if (headerlessResults.errors.length > 0) {
-              const firstError = headerlessResults.errors[0];
+            // Filter out delimiter detection warnings (non-critical errors)
+            const criticalErrors = headerlessResults.errors.filter(
+              (err) => err.type !== "Delimiter" && err.code !== "UndetectableDelimiter"
+            );
+
+            if (criticalErrors.length > 0) {
+              const firstError = criticalErrors[0];
               errorMessage.value = `CSV parsing error: ${
                 firstError?.message || "Unknown error"
               }`;
