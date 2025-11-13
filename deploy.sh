@@ -65,6 +65,37 @@ else
     cd $APP_NAME
 fi
 
+# Create .env file with default configuration
+echo "Creating .env file..."
+cat > .env << 'EOF'
+# ChirpStack v4 Server Configuration
+# The URL of your ChirpStack server (including protocol and port if needed)
+# Example: https://chirpstack.example.com:8080
+# For local development, use the proxy path to avoid CORS issues
+VITE_CHIRPSTACK_URL=http://localhost:5174
+
+
+# ChirpStack API Token
+# Generate this from your ChirpStack web interface under API Keys
+VITE_CHIRPSTACK_API_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjaGlycHN0YWNrIiwiaXNzIjoiY2hpcnBzdGFjayIsInN1YiI6ImJmMTZlMDZmLTIzZmUtNDc4YS05NTUwLWQyNTE1ZTk5NWY3NyIsInR5cCI6ImtleSJ9.fKMN-8QHKWmrWeaE9Jmv78mxceJDlgLUn6P02iY3G80
+
+
+# Application ID
+# The UUID of the application where devices will be registered
+# You can find this in the ChirpStack web interface
+VITE_CHIRPSTACK_APPLICATION_ID=d125de58-de82-4221-9330-a90c9676cb4d
+
+
+# Device Profile ID
+# The UUID of the device profile to assign to imported devices
+# You can find this in the ChirpStack web interface
+VITE_CHIRPSTACK_DEVICE_PROFILE_ID=fa8c07e0-82f0-4243-9df1-2d8eab445f7a
+EOF
+
+# Load environment variables from .env file
+echo "Loading environment variables..."
+source .env
+
 # Prompt for environment variables if not set
 if [ -z "$VITE_CHIRPSTACK_URL" ]; then
     echo ""
