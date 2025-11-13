@@ -59,19 +59,23 @@ const handleFileChange = (event: Event) => {
 
       // Validate headers
       const headers = results.meta.fields || [];
-      if (!headers.includes("device_name") || !headers.includes("deveui")) {
-        errorMessage.value =
-          'CSV must contain "device_name" and "deveui" headers';
+      if (!headers.includes("deveui")) {
+        errorMessage.value = 'CSV must contain "deveui" header';
         uploadStatus.value = "error";
         return;
       }
 
-      // Validate data and auto-generate app_key if missing
+      // Validate data and auto-generate device_name and app_key
       const validDevices = results.data
         .filter((device) => {
-          return device.device_name && device.deveui;
+          return device.deveui && device.deveui.trim() !== "";
         })
         .map((device) => {
+          // Auto-generate device_name from last 5 digits of DevEUI
+          const cleanDevEui = device.deveui.replace(/[^0-9A-Fa-f]/g, '');
+          const last5Digits = cleanDevEui.slice(-5).toUpperCase();
+          device.device_name = `BZ1-${last5Digits}`;
+
           // Auto-generate app_key from DevEUI if not provided
           if (!device.app_key || device.app_key.trim() === "") {
             device.app_key = generateAppKeyFromDevEUI(device.deveui);
@@ -222,10 +226,13 @@ const reset = () => {
                 <div class="space-y-2">
                   <p class="text-sm font-medium text-foreground">Required Format</p>
                   <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200 font-mono text-sm">
-                    <span class="text-indigo-600">device_name</span>,<span class="text-purple-600">deveui</span>
+                    <span class="text-purple-600">deveui</span>
                   </div>
                   <p class="text-xs text-muted-foreground">
-                    <strong>app_key</strong> is optional and will be auto-generated if not provided
+                    Device names will be auto-generated as <strong>BZ1-{last 5 digits}</strong>
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    <strong>app_key</strong> will also be auto-generated from the DevEUI
                   </p>
                 </div>
 
@@ -233,10 +240,14 @@ const reset = () => {
                 <div class="space-y-2">
                   <p class="text-sm font-medium text-foreground">Example</p>
                   <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-200 font-mono text-xs leading-relaxed">
-                    device_name,deveui<br />
-                    BZ1-00001,8C1F6443F0000001<br />
-                    BZ1-00002,8C1F6443F0000002
+                    deveui<br />
+                    8C1F6443F0000013<br />
+                    8C1F6443F0000014<br />
+                    8C1F6443F0000017
                   </div>
+                  <p class="text-xs text-muted-foreground italic">
+                    → Generates: BZ1-00013, BZ1-00014, BZ1-00017
+                  </p>
                 </div>
               </div>
             </div>
