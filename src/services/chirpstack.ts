@@ -113,10 +113,11 @@ export class ChirpStackClient {
         );
         results.success++;
       } catch (error: any) {
+        console.error(`Failed to register device ${device.deveui}: code=${error.code} message=${error.message}`, JSON.stringify(error));
         results.failed++;
         results.errors.push({
           device,
-          error: error.message || "Unknown error",
+          error: error.message || (error.code !== undefined ? `gRPC error code ${error.code}` : "Unknown error"),
         });
       }
 

@@ -33,13 +33,13 @@ const uploadErrors = ref<Array<{ device: DeviceData; error: string }>>([]);
 // Use '/api' for production (Nginx reverse proxy) or the configured URL for development
 const chirpstackUrl = import.meta.env.VITE_CHIRPSTACK_URL || "/api";
 const apiToken = import.meta.env.VITE_CHIRPSTACK_API_TOKEN || "";
-const applicationId = import.meta.env.VITE_CHIRPSTACK_APPLICATION_ID || "";
-const deviceProfileId = import.meta.env.VITE_CHIRPSTACK_DEVICE_PROFILE_ID || "";
+const applicationId = ref(import.meta.env.VITE_CHIRPSTACK_APPLICATION_ID || "");
+const deviceProfileId = ref(import.meta.env.VITE_CHIRPSTACK_DEVICE_PROFILE_ID || "");
 
 const deviceCount = computed(() => devices.value.length);
 // chirpstackUrl defaults to /api, so only check the other required fields
 const isConfigured = computed(
-  () => apiToken && applicationId && deviceProfileId
+  () => apiToken && applicationId.value && deviceProfileId.value
 );
 
 // Parse DevEUI text (from file or paste)
@@ -154,8 +154,8 @@ const uploadDevices = async () => {
     const client = new ChirpStackClient(chirpstackUrl, apiToken);
 
     const results = await client.registerDevices(
-      applicationId,
-      deviceProfileId,
+      applicationId.value,
+      deviceProfileId.value,
       devices.value,
       (current, total) => {
         currentProgress.value = current;
@@ -242,14 +242,41 @@ const reset = () => {
           </p>
         </div>
 
-        <!-- Configuration Warning -->
-        <div v-if="!isConfigured" class="animate-slide-up">
-          <Alert variant="destructive" class="shadow-lg">
-            <AlertCircle class="h-5 w-5 inline mr-2" />
-            <strong>Configuration Missing:</strong> Please configure your
-            environment variables in the .env file
-          </Alert>
-        </div>
+        <!-- Configuration Inputs -->
+        <Card class="shadow-xl border-0 bg-white/80 backdrop-blur-sm animate-slide-up">
+          <div class="p-6 space-y-4">
+            <div class="flex items-center gap-3 mb-2">
+              <AlertCircle class="w-5 h-5 text-orange-600" />
+              <h2 class="text-lg font-semibold text-foreground">ChirpStack Configuration</h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-foreground">Application ID</label>
+                <input
+                  v-model="applicationId"
+                  type="text"
+                  placeholder="e.g. d125de58-de82-4221-9330-a90c9676cb4d"
+                  :disabled="isProcessing"
+                  class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg font-mono text-sm transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-foreground">Device Profile ID</label>
+                <input
+                  v-model="deviceProfileId"
+                  type="text"
+                  placeholder="e.g. fa8c07e0-82f0-4243-9df1-2d8eab445f7a"
+                  :disabled="isProcessing"
+                  class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg font-mono text-sm transition-all duration-300 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+            <Alert v-if="!isConfigured" variant="destructive" class="shadow-sm">
+              <AlertCircle class="h-4 w-4 inline mr-2" />
+              Both Application ID and Device Profile ID are required to upload.
+            </Alert>
+          </div>
+        </Card>
 
         <!-- Main Card -->
         <Card
@@ -420,41 +447,45 @@ const reset = () => {
                 enter-from-class="opacity-0 transform scale-95"
                 enter-to-class="opacity-100 transform scale-100"
               >
-                <div v-if="uploadStatus === 'success'" class="space-y-4">
-                  <Alert variant="success" class="shadow-lg">
-                    <CheckCircle class="h-5 w-5 inline mr-2" />
-                    Successfully registered
-                    <strong>{{ successCount }}</strong> device(s)
-                    <span v-if="failedCount > 0" class="text-orange-600">
-                      - {{ failedCount }} failed</span
-                    >
-                  </Alert>
-
-                  <!-- Error List -->
-                  <div
-                    v-if="uploadErrors.length > 0"
-                    class="mt-4 p-4 bg-red-50 rounded-xl border border-red-200"
+                <Alert v-if="uploadStatus === 'success'" variant="success" class="shadow-lg">
+                  <CheckCircle class="h-5 w-5 inline mr-2" />
+                  Successfully registered
+                  <strong>{{ successCount }}</strong> device(s)
+                  <span v-if="failedCount > 0" class="text-orange-600">
+                    - {{ failedCount }} failed</span
                   >
-                    <h3
-                      class="font-semibold text-red-800 mb-3 flex items-center gap-2"
+                </Alert>
+              </transition>
+
+              <!-- Failed Devices List (shown for both partial and full failure) -->
+              <transition
+                enter-active-class="transition duration-300"
+                enter-from-class="opacity-0 transform scale-95"
+                enter-to-class="opacity-100 transform scale-100"
+              >
+                <div
+                  v-if="uploadErrors.length > 0 && (uploadStatus === 'success' || uploadStatus === 'error')"
+                  class="mt-4 p-4 bg-red-50 rounded-xl border border-red-200"
+                >
+                  <h3
+                    class="font-semibold text-red-800 mb-3 flex items-center gap-2"
+                  >
+                    <XCircle class="w-4 h-4" />
+                    Failed Devices
+                  </h3>
+                  <div class="space-y-2 max-h-60 overflow-y-auto">
+                    <div
+                      v-for="(error, index) in uploadErrors"
+                      :key="index"
+                      class="text-sm bg-white p-3 rounded-lg shadow-sm"
                     >
-                      <XCircle class="w-4 h-4" />
-                      Failed Devices
-                    </h3>
-                    <div class="space-y-2 max-h-60 overflow-y-auto">
-                      <div
-                        v-for="(error, index) in uploadErrors"
-                        :key="index"
-                        class="text-sm bg-white p-3 rounded-lg shadow-sm"
+                      <strong class="text-red-700">{{
+                        error.device.device_name
+                      }}</strong>
+                      <span class="text-gray-500">
+                        ({{ error.device.deveui }})</span
                       >
-                        <strong class="text-red-700">{{
-                          error.device.device_name
-                        }}</strong>
-                        <span class="text-gray-500">
-                          ({{ error.device.deveui }})</span
-                        >
-                        <p class="text-red-600 mt-1">{{ error.error }}</p>
-                      </div>
+                      <p class="text-red-600 mt-1">{{ error.error }}</p>
                     </div>
                   </div>
                 </div>
