@@ -224,7 +224,7 @@ const reset = () => {
         <div class="text-center space-y-4 animate-fade-in py-8">
           <div class="inline-flex items-center justify-center mb-4">
             <img
-              src="https://bee.space/build/assets/beespace-gradient-text-dark-azsTCx8P.svg"
+              src="/beespace-logo.png"
               alt="beespace logo"
               class="h-16"
             />
